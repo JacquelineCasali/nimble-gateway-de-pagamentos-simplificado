@@ -2,10 +2,7 @@ package com.pickpaysimplificado.domain.transaction;
 
 import com.pickpaysimplificado.domain.user.User;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
@@ -16,6 +13,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @AllArgsConstructor
+@NoArgsConstructor
 @EqualsAndHashCode(of="id")
 public class Transaction {
     @Id
@@ -26,11 +24,13 @@ public class Transaction {
 //    muitos para um
 @ManyToOne
 @JoinColumn(name="sender_id")
+//enviar
 private User sender;
 
     @ManyToOne
-    @JoinColumn(name="resolver")
-    private User resolver;
+    @JoinColumn(name="receiver_id")
+    //receber
+    private User receiver;
 
     private LocalDateTime timestamp;
 }
