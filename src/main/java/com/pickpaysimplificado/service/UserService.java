@@ -3,7 +3,7 @@ package com.pickpaysimplificado.service;
 import at.favre.lib.crypto.bcrypt.BCrypt;
 import com.pickpaysimplificado.domain.user.User;
 import com.pickpaysimplificado.domain.user.UserType;
-import com.pickpaysimplificado.infra.exceptions.UserFoundException;
+
 import com.pickpaysimplificado.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -50,16 +50,5 @@ public class UserService {
         return this.userRepository.findAll();
     }
 
-//  public User execute (User user){
-//      this.userRepository.findUserByDocument(user.getDocument())
-//              .ifPresent((usuario)->{
-//                  throw new UserFoundException();
-//              });
-//      var passwordHashred = BCrypt.withDefaults()
-//              .hashToString(12, user.getPassword().toCharArray());
-//
-//      user.setPassword(passwordHashred);
-//      return this.userRepository.save(user);
-//  }
 
 }

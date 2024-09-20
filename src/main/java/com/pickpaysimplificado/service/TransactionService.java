@@ -58,10 +58,10 @@ public class TransactionService {
         this.userService.saveUser(sender);
         this.userService.saveUser(receiver);
 
-        System.out.println("Transação realizada com sucesso");
+
         this.notificationService.sendNotification(sender,"Transação realizada com sucesso");
         this.notificationService.sendNotification(receiver,"Transação recebida com sucesso");
-
+        System.out.println("Transação realizada com sucesso");
         return newTransaction;
 
     }

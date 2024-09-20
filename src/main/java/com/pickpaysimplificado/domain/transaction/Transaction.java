@@ -1,10 +1,9 @@
 package com.pickpaysimplificado.domain.transaction;
 
 import com.pickpaysimplificado.domain.user.User;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 

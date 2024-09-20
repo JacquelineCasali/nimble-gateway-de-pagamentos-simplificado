@@ -7,6 +7,6 @@ import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User,Long>{
     //    Optional para validação
-    Optional<User> findUserByDocument (String document);
+//    Optional<User> findByCpfCnpjOrEmail (String cpfCnpj,String email);
     Optional<User> findUserById (Long id);
 }

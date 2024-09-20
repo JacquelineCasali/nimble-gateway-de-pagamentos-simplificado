@@ -48,7 +48,7 @@ https://github.com/JacquelineCasali/-Back-end-PicPay-Java.git
 
 ##### Enquanto o servidor está ligado, acesse o navegador e entre no endereço abaixo
 
-[//]: # (http://localhost:8080/swagger-ui/index.html)
+# (http://localhost:8080/swagger-ui/index.html)
 
 
 ## 📝 Licença
