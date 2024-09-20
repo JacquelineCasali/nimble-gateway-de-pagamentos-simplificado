@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.pickpay</groupId>
-	<artifactId>pickpaysimplificado</artifactId>
+	<artifactId>pickpay</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>pickpaysimplificado</name>
+	<name>pickpay</name>
 	<description>Projeto da vaga backend -Picpay</description>
 
 	<properties>
