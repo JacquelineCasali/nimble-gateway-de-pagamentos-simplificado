@@ -1,6 +1,7 @@
 package com.nimble.service;
 
 import at.favre.lib.crypto.bcrypt.BCrypt;
+import com.nimble.dto.UserResponseDto;
 import com.nimble.entity.User;
 import com.nimble.infra.exceptions.MultiplasRegrasException;
 import com.nimble.repository.UserRepository;
@@ -16,14 +17,18 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
-    public void createUser(User user){
+    public UserResponseDto createUser(User user){
         List<String> erros = new ArrayList<>();
 
-        if (!CPFValidator.isValid(user.getCpf())) {
+        // remove a formatação
+        String cpfLimpo = user.getCpf().replaceAll("\\D", "");
+        user.setCpf(cpfLimpo);
+
+        if (!CPFValidator.isValid(cpfLimpo)) {
             erros.add("CPF inválido");
         }
 
-        if (userRepository.existsByCpf(user.getCpf())) {
+        if (userRepository.existsByCpf(cpfLimpo)) {
             erros.add("CPF " + user.getCpf() + " já está cadastrado");
         }
 
@@ -39,6 +44,12 @@ public class UserService {
         var senhaHashred = BCrypt.withDefaults()
                 .hashToString(12, user.getSenha().toCharArray());
         user.setSenha(senhaHashred);
-        userRepository.save(user);
+       User saveUser= userRepository.save(user);
+
+        return new UserResponseDto(saveUser.getId(), saveUser.getNome(), saveUser.getCpf(), saveUser.getEmail());
+    }
+
+    public List<User> getAllUsers(){
+        return this.userRepository.findAll();
     }
 }

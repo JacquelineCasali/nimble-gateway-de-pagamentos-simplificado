@@ -1,17 +1,18 @@
 package com.nimble.controller;
 
+import com.nimble.dto.UserResponseDto;
 import com.nimble.entity.User;
 
 import com.nimble.service.UserService;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 
 @RestController
@@ -20,10 +21,15 @@ public class UserController {
     @Autowired
     private UserService userService;
     @PostMapping
-        public ResponseEntity create (@Valid @RequestBody User user){
-
-        this.userService.createUser(user);
-        return ResponseEntity.status(HttpStatus.CREATED).body(user);
-
+    public ResponseEntity<UserResponseDto> create(@Valid @RequestBody User user) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(user));
     }
+    //todos os dados precisa de autenticação
+
+    @GetMapping
+    public ResponseEntity <List<User>> getAllUsers(){
+        List<User> users= this.userService.getAllUsers();
+        return new ResponseEntity<>(users,HttpStatus.OK);
+    }
+
 }
