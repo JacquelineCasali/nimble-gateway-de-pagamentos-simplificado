@@ -3,11 +3,11 @@ package com.nimble.service;
 import at.favre.lib.crypto.bcrypt.BCrypt;
 import com.nimble.dto.UserResponseDto;
 import com.nimble.entity.User;
+import com.nimble.infra.exceptions.CpfNotFoundException;
 import com.nimble.infra.exceptions.MultiplasRegrasException;
 import com.nimble.repository.UserRepository;
 import com.nimble.util.CPFValidator;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -33,9 +33,9 @@ public class UserService {
     }
 
     // verificando se o cpf exite
-    public User findByCpf(String cpf) throws Exception {
+    public User findByCpf(String cpf,String campo) throws Exception {
         return this.userRepository.findByCpf(cpf)
-                .orElseThrow(() -> new Exception("CPF não encontrado"));
+                .orElseThrow(() -> new CpfNotFoundException(campo,cpf));
     }
 
 
@@ -68,13 +68,12 @@ public class UserService {
         user.setSenha(senhaHashred);
         User saveUser = userRepository.save(user);
 
-        return new UserResponseDto(saveUser.getId(), saveUser.getNome(), saveUser.getCpf(), saveUser.getEmail());
+        return new UserResponseDto(saveUser.getId(), saveUser.getNome(), saveUser.getCpf(),
+                saveUser.getEmail(),saveUser.getSaldo());
     }
-
-    public void saveUser(User user){
+    public void saveUser(User user) {
         this.userRepository.save(user);
     }
-
     public List<User> getAllUsers() {
         return this.userRepository.findAll();
     }

@@ -31,10 +31,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({
                     RegraNegocioException.class,
-
+            CpfNotFoundException.class
     })
     public ResponseEntity<?> handlePersonalizadas(RuntimeException ex) {
-        return ResponseEntity.badRequest().body(Map.of("erros", List.of(ex.getMessage())));
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("erros", List.of(ex.getMessage())));
     }
 
     @ExceptionHandler(Exception.class)

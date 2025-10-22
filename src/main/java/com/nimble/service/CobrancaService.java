@@ -2,6 +2,8 @@ package com.nimble.service;
 
 
 import com.nimble.dto.CobrancaDto;
+import com.nimble.dto.CobrancaResponseDto;
+import com.nimble.dto.UserResponseDto;
 import com.nimble.entity.Cobranca;
 import com.nimble.entity.User;
 import com.nimble.repository.CobrancaRepository;
@@ -28,20 +30,14 @@ public class CobrancaService {
 
 
 
-    public Cobranca criarCobranca(CobrancaDto cobrancaDto) throws Exception {
+    public CobrancaResponseDto criarCobranca(CobrancaDto cobrancaDto) throws Exception {
 // pegando o usuario
         // Buscar usuários pelo CPF
-        User originador = userService.findByCpf(cobrancaDto.cpfOriginador());
-        User destinatario = userService.findByCpf(cobrancaDto.cpfDestinatario());
+        User originador = userService.findByCpf(cobrancaDto.cpfOriginador(),"originador");
+        User destinatario = userService.findByCpf(cobrancaDto.cpfDestinatario(),"destinatario");
 
         // validando
         userService.validateCobranca(originador,cobrancaDto.valor());
-
-//verificando se não esta autorizado
-//        boolean isAuthorized=this.authorizeTransaction(sender,transaction.value());
-//        if(!isAuthorized){
-//throw  new Exception("Transação não autorizada");
-//        }
 
         Cobranca newCobranca= new Cobranca();
         newCobranca.setValor(cobrancaDto.valor());
@@ -55,7 +51,7 @@ public class CobrancaService {
         originador.setSaldo(originador.getSaldo().subtract(cobrancaDto.valor()));
         destinatario.setSaldo(destinatario.getSaldo().add(cobrancaDto.valor()));
 
-        this.cobrancaRepository.save(newCobranca);
+        cobrancaRepository.save(newCobranca);
         this.userService.saveUser(originador);
         this.userService.saveUser(destinatario);
 
@@ -63,7 +59,30 @@ public class CobrancaService {
 //        this.notificationService.sendNotification(sender,"Transação realizada com sucesso");
 //        this.notificationService.sendNotification(receiver,"Transação recebida com sucesso");
         System.out.println("Transação realizada com sucesso");
-        return newCobranca;
+        // Montando o DTO direto aqui (sem método separado)
+        return new CobrancaResponseDto(
+                newCobranca.getId(),
+               new UserResponseDto(
+                        originador.getId(),
+                        originador.getNome(),
+                        originador.getCpf(),
+                       originador.getEmail(),
+                        originador.getSaldo()
+
+                ),
+                new UserResponseDto(
+                        destinatario.getId(),
+                        destinatario.getNome(),
+                        destinatario.getCpf(),
+                        destinatario.getEmail(),
+                        destinatario.getSaldo()
+
+                ),
+                newCobranca.getValor(),
+                newCobranca.getDescricao(),
+                newCobranca.getStatus(),
+                newCobranca.getDataCriacao()
+        );
 
     }
     // Antes de finalizar a transferência, deve-se consultar um serviço autorizador externo
