@@ -7,17 +7,39 @@ import com.nimble.infra.exceptions.MultiplasRegrasException;
 import com.nimble.repository.UserRepository;
 import com.nimble.util.CPFValidator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserService {
+
     @Autowired
     private UserRepository userRepository;
 
-    public UserResponseDto createUser(User user){
+
+    public void validateCobranca(User originador, BigDecimal valor ) throws Exception {
+
+//        validando se tem saldo suficiente para fazer a transferencia
+
+        if(originador.getSaldo().compareTo(valor)<0){
+            throw new Exception("Saldo insuficiente");
+        }
+
+    }
+
+    // verificando se o cpf exite
+    public User findByCpf(String cpf) throws Exception {
+        return this.userRepository.findByCpf(cpf)
+                .orElseThrow(() -> new Exception("CPF não encontrado"));
+    }
+
+
+    public UserResponseDto createUser(User user) {
         List<String> erros = new ArrayList<>();
 
         // remove a formatação
@@ -44,12 +66,22 @@ public class UserService {
         var senhaHashred = BCrypt.withDefaults()
                 .hashToString(12, user.getSenha().toCharArray());
         user.setSenha(senhaHashred);
-       User saveUser= userRepository.save(user);
+        User saveUser = userRepository.save(user);
 
         return new UserResponseDto(saveUser.getId(), saveUser.getNome(), saveUser.getCpf(), saveUser.getEmail());
     }
 
-    public List<User> getAllUsers(){
+    public void saveUser(User user){
+        this.userRepository.save(user);
+    }
+
+    public List<User> getAllUsers() {
         return this.userRepository.findAll();
     }
+
+
+    //    public Optional<User> findByCpf(String cpf) {
+//        return userRepository.findByCpfOrEmail(cpf, null);
+//    }
+
 }

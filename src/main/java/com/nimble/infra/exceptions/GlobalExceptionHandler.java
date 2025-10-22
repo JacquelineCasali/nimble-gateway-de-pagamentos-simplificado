@@ -14,10 +14,6 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-//    @ExceptionHandler(MultiplasRegrasException.class)
-//    public ResponseEntity<?> handleMultiplasRegras(MultiplasRegrasException ex) {
-//        return ResponseEntity.badRequest().body(Map.of("erros", ex.getMensagens()));
-//    }
 
     @ExceptionHandler(MultiplasRegrasException.class)
     public ResponseEntity<?> handleMultiplasRegras(MultiplasRegrasException ex) {
@@ -44,7 +40,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleOutras(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("erros", List.of("Erro interno: " + ex.getMessage())));
+                .body(Map.of("erros", List.of(ex.getMessage())));
     }
     @ExceptionHandler(DadoDuplicadoException.class)
     public ResponseEntity<?> handleDadoDuplicado(DadoDuplicadoException ex) {
@@ -58,4 +54,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(Map.of("erro", List.of("Usuário ou senha inválido")));
     }
+
+//    @ExceptionHandler(UsernameNotFoundException.class)
+//    public ResponseEntity<?> handleUserNotFound(UsernameNotFoundException ex) {
+//        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+//                .body(Map.of("erro", List.of("Usuário não encontrado")));
+//    }
 }

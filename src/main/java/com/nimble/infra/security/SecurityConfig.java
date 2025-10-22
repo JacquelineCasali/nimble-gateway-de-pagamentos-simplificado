@@ -23,23 +23,7 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
     }
-//    @Bean
-//    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-//        return http.csrf(csrf -> csrf.disable())
-//                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-//                .authorizeHttpRequests(req -> {
-////Permite acesso publico
-//                    req.requestMatchers(HttpMethod.POST, "/login","/users").permitAll();
-//                    req.requestMatchers( "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll();
-//                    req.anyRequest().authenticated(); // Exige login para outras rotas
-//                })
-//                //ordenação de filter
-//                .addFilterBefore(securityFilter , UsernamePasswordAuthenticationFilter.class)
-//                .build();
-//
-//
-//    }
-//
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, CustomAuthenticationEntryPoint customEntryPoint) throws Exception {
         return http.csrf(csrf -> csrf.disable())
