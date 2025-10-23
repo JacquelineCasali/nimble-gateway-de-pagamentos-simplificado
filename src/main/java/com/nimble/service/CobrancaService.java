@@ -3,6 +3,7 @@ package com.nimble.service;
 
 import com.nimble.dto.CobrancaDto;
 import com.nimble.dto.CobrancaResponseDto;
+import com.nimble.dto.PagamentoCartaoDto;
 import com.nimble.dto.UserResponseDto;
 import com.nimble.entity.Cobranca;
 import com.nimble.entity.Status;
@@ -10,6 +11,7 @@ import com.nimble.entity.User;
 import com.nimble.infra.exceptions.RegraNegocioException;
 import com.nimble.repository.CobrancaRepository;
 import com.nimble.repository.UserRepository;
+import com.nimble.util.AutorizadorClient;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.stereotype.Service;
@@ -36,7 +38,8 @@ public class CobrancaService {
     private RestTemplate restTemplate;
     @Autowired
     private UserRepository userRepository;
-
+    @Autowired
+    private AutorizadorClient autorizadorClient;
 @Transactional
     public CobrancaResponseDto criarCobranca(CobrancaDto cobrancaDto,User originador) throws Exception {
 
@@ -82,38 +85,49 @@ public class CobrancaService {
         Cobranca cobranca = cobrancaRepository.findById(cobrancaId)
                 .orElseThrow(() -> new RuntimeException("Cobrança não encontrada"));
 
-
-
         // Verifica se quem está pagando é o destinatário da cobrança
         if (!Objects.equals(cobranca.getDestinatario().getId(), pagador.getId())) {
             throw new RuntimeException("Usuário não autorizado a pagar esta cobrança");
         }
-
 
         if (cobranca.getStatus() != Status.PENDENTE) {
             throw new RuntimeException("Só é possível pagar cobranças pendentes");
         }
 
 // quem vai receber o pagamento
-        User originador = cobranca.getOriginador();
+//        User originador = cobranca.getOriginador();
         BigDecimal valor = cobranca.getValor();
 
-        // Validar saldo do pagador (destinatário)
+        // verifica  saldo
         if (pagador.getSaldo().compareTo(valor) < 0) {
             throw new RuntimeException("Saldo insuficiente para pagar a cobrança");
         }
 
-        // Debitar do pagador (destinatário)
+        //chama a api externa de autorização para validar a operação
+
+        boolean autorizado = autorizadorClient.isAutorizado();
+//verifica se o pagamento foi autorizado ou nao
+        if (!autorizado) {
+            throw new RuntimeException("Pagamento não autorizado pelo autorizador externo");
+        }
+
+
+        // Debita saldo do pagador
         pagador.setSaldo(pagador.getSaldo().subtract(valor));
-        // Creditar no originador (quem criou a cobrança)
+        // Credita saldo no originador (quem criou a cobrança)
+        User originador = cobranca.getOriginador();
         originador.setSaldo(originador.getSaldo().add(valor));
+
+        // User destinatario = cobranca.getDestinatario();
+        // Creditar no originador (quem criou a cobrança)
+//        destinatario.setSaldo(destinatario.getSaldo().add(valor));
 
         // Atualizar status da cobrança para PAGA
         cobranca.setStatus(Status.PAGA);
 
         // Salvar alterações
-        userRepository.save(originador);
         userRepository.save(pagador);
+        userRepository.save(originador);
         cobrancaRepository.save(cobranca);
 
         return cobrancaResponse(cobranca);
@@ -162,4 +176,38 @@ public class CobrancaService {
                 cobranca.getStatus(),
                 cobranca.getDataCriacao()
         );
-    }}
+    }
+
+//    @Transactional
+//    public CobrancaResponseDto pagarPorCartao(Long cobrancaId, User pagador, PagamentoCartaoDto pagamentoDto) throws Exception {
+//        Cobranca cobranca = cobrancaRepository.findById(cobrancaId)
+//                .orElseThrow(() -> new RuntimeException("Cobrança não encontrada"));
+//
+//        if (!Objects.equals(cobranca.getDestinatario().getId(), pagador.getId())) {
+//            throw new RuntimeException("Usuário não autorizado a pagar esta cobrança");
+//        }
+//
+//        if (cobranca.getStatus() != Status.PENDENTE) {
+//            throw new RuntimeException("Só é possível pagar cobranças pendentes");
+//        }
+//
+//        // Chamar autorizador externo com os dados do cartão
+//        boolean autorizado = autorizadorService.autorizarPagamento(pagamentoDto);
+//
+//        if (!autorizado) {
+//            throw new RuntimeException("Pagamento não autorizado");
+//        }
+//
+//        // Atualizar status da cobrança para PAGA
+//        cobranca.setStatus(Status.PAGA);
+//        cobrancaRepository.save(cobranca);
+//
+//        // Creditar saldo do destinatário
+//        User destinatario = cobranca.getDestinatario();
+//        destinatario.setSaldo(destinatario.getSaldo().add(cobranca.getValor()));
+//        userRepository.save(destinatario);
+//
+//        return cobrancaResponse(cobranca);
+//    }
+
+}

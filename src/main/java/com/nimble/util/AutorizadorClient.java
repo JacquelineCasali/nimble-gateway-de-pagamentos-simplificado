@@ -15,9 +15,25 @@ public class AutorizadorClient {
         RestTemplate restTemplate = new RestTemplate();
         try {
             ResponseEntity<Map> response = restTemplate.getForEntity(URL, Map.class);
-            return response.getStatusCode().is2xxSuccessful() &&
-                    "Autorizado".equalsIgnoreCase((String) response.getBody().get("message"));
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                return false;
+            }
+            Map<String, Object> body = response.getBody();
+            if (body == null) return false;
+
+            Object dataObj = body.get("data");
+            if (!(dataObj instanceof Map)) return false;
+
+            Map<String, Object> data = (Map<String, Object>) dataObj;
+            Object authorizedObj = data.get("authorized");
+            if (!(authorizedObj instanceof Boolean)) return false;
+            System.out.println("Status code: " + response.getStatusCode());
+            System.out.println("Body: " + response.getBody());
+
+
+            return (Boolean) authorizedObj;
         } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
     }

@@ -2,6 +2,7 @@ package com.nimble.controller;
 
 import com.nimble.dto.CobrancaDto;
 import com.nimble.dto.CobrancaResponseDto;
+import com.nimble.dto.PagamentoCartaoDto;
 import com.nimble.entity.Cobranca;
 import com.nimble.entity.Status;
 import com.nimble.service.CobrancaService;
@@ -60,5 +61,14 @@ public class CobrancaController {
         var cobrancaCancelada = cobrancaService.cancelarCobranca(id,originador);
         return ResponseEntity.ok(cobrancaCancelada);
     }
+
+
+//    @PutMapping("/pagar-cartao/{id}")
+//    public ResponseEntity<CobrancaResponseDto> pagarPorCartao(@PathVariable Long id, @RequestBody PagamentoCartaoDto pagamentoDto) throws Exception {
+//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//        User pagador = (User) authentication.getPrincipal();
+//        var cobrancaPaga = cobrancaService.pagarPorCartao(id, pagador, pagamentoDto);
+//        return ResponseEntity.ok(cobrancaPaga);
+//    }
 
 }
