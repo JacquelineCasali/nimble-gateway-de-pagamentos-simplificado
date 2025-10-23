@@ -27,11 +27,7 @@ public class AutorizadorClient {
             Map<String, Object> data = (Map<String, Object>) dataObj;
             Object authorizedObj = data.get("authorized");
             if (!(authorizedObj instanceof Boolean)) return false;
-            System.out.println("Status code: " + response.getStatusCode());
-            System.out.println("Body: " + response.getBody());
-
-
-            return (Boolean) authorizedObj;
+                      return (Boolean) authorizedObj;
         } catch (Exception e) {
             e.printStackTrace();
             return false;

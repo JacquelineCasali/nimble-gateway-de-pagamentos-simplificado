@@ -2,8 +2,6 @@ package com.nimble.controller;
 
 import com.nimble.dto.CobrancaDto;
 import com.nimble.dto.CobrancaResponseDto;
-import com.nimble.dto.PagamentoCartaoDto;
-import com.nimble.entity.Cobranca;
 import com.nimble.entity.Status;
 import com.nimble.service.CobrancaService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,8 +60,8 @@ public class CobrancaController {
         return ResponseEntity.ok(cobrancaCancelada);
     }
 
-
-//    @PutMapping("/pagar-cartao/{id}")
+//pagar com o cartao
+//    @PutMapping("/pagarCartao/{id}")
 //    public ResponseEntity<CobrancaResponseDto> pagarPorCartao(@PathVariable Long id, @RequestBody PagamentoCartaoDto pagamentoDto) throws Exception {
 //        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 //        User pagador = (User) authentication.getPrincipal();

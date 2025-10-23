@@ -1,10 +1,7 @@
 package com.nimble.service;
 
 
-import com.nimble.dto.CobrancaDto;
-import com.nimble.dto.CobrancaResponseDto;
-import com.nimble.dto.PagamentoCartaoDto;
-import com.nimble.dto.UserResponseDto;
+import com.nimble.dto.*;
 import com.nimble.entity.Cobranca;
 import com.nimble.entity.Status;
 import com.nimble.entity.User;
@@ -40,6 +37,8 @@ public class CobrancaService {
     private UserRepository userRepository;
     @Autowired
     private AutorizadorClient autorizadorClient;
+//    @Autowired
+//    private AutorizadorCartaoClient autorizadorCartaoClient;
 @Transactional
     public CobrancaResponseDto criarCobranca(CobrancaDto cobrancaDto,User originador) throws Exception {
 
@@ -94,7 +93,7 @@ public class CobrancaService {
             throw new RuntimeException("Só é possível pagar cobranças pendentes");
         }
 
-// quem vai receber o pagamento
+
 //        User originador = cobranca.getOriginador();
         BigDecimal valor = cobranca.getValor();
 
@@ -118,9 +117,6 @@ public class CobrancaService {
         User originador = cobranca.getOriginador();
         originador.setSaldo(originador.getSaldo().add(valor));
 
-        // User destinatario = cobranca.getDestinatario();
-        // Creditar no originador (quem criou a cobrança)
-//        destinatario.setSaldo(destinatario.getSaldo().add(valor));
 
         // Atualizar status da cobrança para PAGA
         cobranca.setStatus(Status.PAGA);
@@ -128,10 +124,16 @@ public class CobrancaService {
         // Salvar alterações
         userRepository.save(pagador);
         userRepository.save(originador);
+
+
         cobrancaRepository.save(cobranca);
 
         return cobrancaResponse(cobranca);
     }
+
+
+
+
 
     @Transactional
     public CobrancaResponseDto cancelarCobranca(Long cobrancaId,User originador) throws Exception {
@@ -141,8 +143,6 @@ public class CobrancaService {
         if (cobranca.getStatus() != Status.PENDENTE) {
             throw new RuntimeException("Só é possível cancelar cobranças pendentes");
         }
-
-
 
         // Verifica se o usuário logado é o originador da cobrança
         if (!Objects.equals(cobranca.getOriginador().getId(),originador.getId())) {
@@ -177,37 +177,5 @@ public class CobrancaService {
                 cobranca.getDataCriacao()
         );
     }
-
-//    @Transactional
-//    public CobrancaResponseDto pagarPorCartao(Long cobrancaId, User pagador, PagamentoCartaoDto pagamentoDto) throws Exception {
-//        Cobranca cobranca = cobrancaRepository.findById(cobrancaId)
-//                .orElseThrow(() -> new RuntimeException("Cobrança não encontrada"));
-//
-//        if (!Objects.equals(cobranca.getDestinatario().getId(), pagador.getId())) {
-//            throw new RuntimeException("Usuário não autorizado a pagar esta cobrança");
-//        }
-//
-//        if (cobranca.getStatus() != Status.PENDENTE) {
-//            throw new RuntimeException("Só é possível pagar cobranças pendentes");
-//        }
-//
-//        // Chamar autorizador externo com os dados do cartão
-//        boolean autorizado = autorizadorService.autorizarPagamento(pagamentoDto);
-//
-//        if (!autorizado) {
-//            throw new RuntimeException("Pagamento não autorizado");
-//        }
-//
-//        // Atualizar status da cobrança para PAGA
-//        cobranca.setStatus(Status.PAGA);
-//        cobrancaRepository.save(cobranca);
-//
-//        // Creditar saldo do destinatário
-//        User destinatario = cobranca.getDestinatario();
-//        destinatario.setSaldo(destinatario.getSaldo().add(cobranca.getValor()));
-//        userRepository.save(destinatario);
-//
-//        return cobrancaResponse(cobranca);
-//    }
 
 }
