@@ -1,9 +1,10 @@
 package com.nimble.entity;
-
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 public enum Status {
-    //Ainda não foram pagas
-    Pendente,
-    Paga,
-    //Foi canceladas
-    Cancelada
+    PENDENTE,
+    PAGA,
+    CANCELADA;
+
+
 }

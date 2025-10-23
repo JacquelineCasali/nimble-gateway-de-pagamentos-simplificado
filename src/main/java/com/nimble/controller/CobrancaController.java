@@ -2,18 +2,19 @@ package com.nimble.controller;
 
 import com.nimble.dto.CobrancaDto;
 import com.nimble.dto.CobrancaResponseDto;
+import com.nimble.entity.Cobranca;
+import com.nimble.entity.Status;
 import com.nimble.service.CobrancaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
+import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import java.util.List;
+import com.nimble.entity.User;
 
 @RestController
 @RequestMapping("/cobranca")
-
 public class CobrancaController {
 
     @Autowired
@@ -22,9 +23,42 @@ public class CobrancaController {
     @PostMapping
 
     public ResponseEntity<CobrancaResponseDto> create (@RequestBody CobrancaDto cobrancaDto) throws Exception {
+        // Recupera o usuário autenticado
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User originador = (User) authentication.getPrincipal();
 
-        var  newCobranca= this.cobrancaService.criarCobranca(cobrancaDto);
+        var  newCobranca= this.cobrancaService.criarCobranca(cobrancaDto,originador);
         return ResponseEntity.ok(newCobranca);
 
     }
+    @GetMapping("/enviadas")
+    public List<CobrancaResponseDto> listarEnviadas(@RequestParam Status status) throws Exception {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User originador = (User) authentication.getPrincipal();
+
+        return cobrancaService.listarCobrancasEnviadas(originador.getCpf(), status);
+    }
+
+    @GetMapping("/recebidas")
+    public List<CobrancaResponseDto> listarrecebidos(@RequestParam Status status) throws Exception {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User destinatario = (User) authentication.getPrincipal();
+        return cobrancaService.listarCobrancasRecebidas(destinatario.getCpf(),status);
+    }
+    @PutMapping("/pagar/{id}")
+    public ResponseEntity<CobrancaResponseDto> pagarCobranca(@PathVariable Long id) throws Exception {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User originador = (User) authentication.getPrincipal();
+        var cobrancaPaga = cobrancaService.pagarCobranca(id, originador);
+        return ResponseEntity.ok(cobrancaPaga);
+    }
+
+    @PutMapping("/cancelar/{id}")
+    public ResponseEntity<CobrancaResponseDto> cancelarCobranca(@PathVariable Long id) throws Exception {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User originador = (User) authentication.getPrincipal();
+        var cobrancaCancelada = cobrancaService.cancelarCobranca(id,originador);
+        return ResponseEntity.ok(cobrancaCancelada);
+    }
+
 }

@@ -35,7 +35,7 @@ private User destinatario;
     private String descricao;
 
     @Enumerated(EnumType.STRING)
-    private Status status = Status.Pendente;
+    private Status status = Status.PENDENTE;
 
     @CreationTimestamp
     private LocalDateTime dataCriacao;

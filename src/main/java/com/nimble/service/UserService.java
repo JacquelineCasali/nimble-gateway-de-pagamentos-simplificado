@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class UserService {
@@ -22,21 +21,6 @@ public class UserService {
     private UserRepository userRepository;
 
 
-    public void validateCobranca(User originador, BigDecimal valor ) throws Exception {
-
-//        validando se tem saldo suficiente para fazer a transferencia
-
-        if(originador.getSaldo().compareTo(valor)<0){
-            throw new Exception("Saldo insuficiente");
-        }
-
-    }
-
-    // verificando se o cpf exite
-    public User findByCpf(String cpf,String campo) throws Exception {
-        return this.userRepository.findByCpf(cpf)
-                .orElseThrow(() -> new CpfNotFoundException(campo,cpf));
-    }
 
 
     public UserResponseDto createUser(User user) {
@@ -71,16 +55,44 @@ public class UserService {
         return new UserResponseDto(saveUser.getId(), saveUser.getNome(), saveUser.getCpf(),
                 saveUser.getEmail(),saveUser.getSaldo());
     }
+
     public void saveUser(User user) {
         this.userRepository.save(user);
     }
-    public List<User> getAllUsers() {
-        return this.userRepository.findAll();
+
+    public void validateCobranca(User originador, BigDecimal valor ) throws Exception {
+
+//        validando se tem saldo suficiente para fazer a transferencia
+
+        if(originador.getSaldo().compareTo(valor)<0){
+            throw new Exception("Saldo insuficiente");
+        }
+
     }
 
+    // verificando se o cpf exite
 
-    //    public Optional<User> findByCpf(String cpf) {
-//        return userRepository.findByCpfOrEmail(cpf, null);
-//    }
+    public User findByCpf(String cpf,String campo) throws Exception {
+        return this.userRepository.findByCpf(cpf)
+                .orElseThrow(() -> new CpfNotFoundException(campo,cpf));
+    }
 
+    public User buscarPorCpf(String cpf) {
+        return userRepository.findByCpf(cpf)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
+    }
+
+    public void depositar(String cpf, BigDecimal valor) {
+        User user = buscarPorCpf(cpf);
+        user.setSaldo(user.getSaldo().add(valor));
+        userRepository.save(user);
+    }
+
+    public void debitar(String cpf, BigDecimal valor) {
+        User user = buscarPorCpf(cpf);
+        if (user.getSaldo().compareTo(valor) < 0)
+            throw new RuntimeException("Saldo insuficiente.");
+        user.setSaldo(user.getSaldo().subtract(valor));
+        userRepository.save(user);
+    }
 }

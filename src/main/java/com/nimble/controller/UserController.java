@@ -25,10 +25,6 @@ public class UserController {
     }
     //todos os dados precisa de autenticação
 
-    @GetMapping
-    public ResponseEntity <List<User>> getAllUsers(){
-        List<User> users= this.userService.getAllUsers();
-        return new ResponseEntity<>(users,HttpStatus.OK);
-    }
+
 
 }

@@ -5,16 +5,23 @@ import com.nimble.dto.CobrancaDto;
 import com.nimble.dto.CobrancaResponseDto;
 import com.nimble.dto.UserResponseDto;
 import com.nimble.entity.Cobranca;
+import com.nimble.entity.Status;
 import com.nimble.entity.User;
+import com.nimble.infra.exceptions.RegraNegocioException;
 import com.nimble.repository.CobrancaRepository;
+import com.nimble.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 public class CobrancaService {
@@ -27,73 +34,132 @@ public class CobrancaService {
     //    fazer comunicação entre serviços restTemplate
     @Autowired
     private RestTemplate restTemplate;
+    @Autowired
+    private UserRepository userRepository;
+
+@Transactional
+    public CobrancaResponseDto criarCobranca(CobrancaDto cobrancaDto,User originador) throws Exception {
+
+    // Buscar usuários pelo CPF
+    User destinatario = userService.findByCpf(cobrancaDto.cpfDestinatario(), "destinatario");
+
+    // Impedir cobrança para o mesmo CPF
+    if (originador.getCpf().equals(destinatario.getCpf())) {
+        throw new RegraNegocioException("Não é permitido criar uma cobrança para o mesmo CPF.");
+    }
+
+    // validando
+    userService.validateCobranca(originador, cobrancaDto.valor());
+
+    Cobranca newCobranca = new Cobranca();
+    newCobranca.setValor(cobrancaDto.valor());
+    newCobranca.setDescricao(cobrancaDto.descricao());
+    newCobranca.setOriginador(originador);
+    newCobranca.setDestinatario(destinatario);
+    newCobranca.setStatus(Status.PENDENTE);
+    newCobranca.setDataCriacao(LocalDateTime.now());
+
+    return cobrancaResponse(cobrancaRepository.save(newCobranca));
+
+}
+
+    // listar cobranças enviadas por status do usuario logado
+    public List<CobrancaResponseDto> listarCobrancasEnviadas(String cpfOriginador, Status status) throws Exception {
+        User originador = userService.findByCpf(cpfOriginador, "originador");
+        List<Cobranca> cobrancas = cobrancaRepository.findByOriginadorAndStatus(originador, status);
+        return cobrancas.stream().map(this::cobrancaResponse).toList();
+    }
+
+    // listar cobranças recebidas por status do usuario logado
+    public List<CobrancaResponseDto> listarCobrancasRecebidas(String cpfDestinatario, Status status) throws Exception {
+        User destinatario = userService.findByCpf(cpfDestinatario, "destinatario");
+        List<Cobranca> cobrancas = cobrancaRepository.findByDestinatarioAndStatus(destinatario, status);
+        return cobrancas.stream().map(this::cobrancaResponse).toList();
+    }
+
+    @Transactional
+    public CobrancaResponseDto pagarCobranca(Long cobrancaId,User pagador) throws Exception {
+        Cobranca cobranca = cobrancaRepository.findById(cobrancaId)
+                .orElseThrow(() -> new RuntimeException("Cobrança não encontrada"));
 
 
 
-    public CobrancaResponseDto criarCobranca(CobrancaDto cobrancaDto) throws Exception {
-// pegando o usuario
-        // Buscar usuários pelo CPF
-        User originador = userService.findByCpf(cobrancaDto.cpfOriginador(),"originador");
-        User destinatario = userService.findByCpf(cobrancaDto.cpfDestinatario(),"destinatario");
-
-        // validando
-        userService.validateCobranca(originador,cobrancaDto.valor());
-
-        Cobranca newCobranca= new Cobranca();
-        newCobranca.setValor(cobrancaDto.valor());
-        newCobranca.setDescricao(cobrancaDto.descricao());
-        newCobranca.setOriginador(originador);
-        newCobranca.setDestinatario(destinatario);
-        newCobranca.setDataCriacao(LocalDateTime.now());
-// atualizar saldo dos usuarios e salvar a transação
-
-// atualizar valores saldo menos o valor da transação
-        originador.setSaldo(originador.getSaldo().subtract(cobrancaDto.valor()));
-        destinatario.setSaldo(destinatario.getSaldo().add(cobrancaDto.valor()));
-
-        cobrancaRepository.save(newCobranca);
-        this.userService.saveUser(originador);
-        this.userService.saveUser(destinatario);
+        // Verifica se quem está pagando é o destinatário da cobrança
+        if (!Objects.equals(cobranca.getDestinatario().getId(), pagador.getId())) {
+            throw new RuntimeException("Usuário não autorizado a pagar esta cobrança");
+        }
 
 
-//        this.notificationService.sendNotification(sender,"Transação realizada com sucesso");
-//        this.notificationService.sendNotification(receiver,"Transação recebida com sucesso");
-        System.out.println("Transação realizada com sucesso");
-        // Montando o DTO direto aqui (sem método separado)
+        if (cobranca.getStatus() != Status.PENDENTE) {
+            throw new RuntimeException("Só é possível pagar cobranças pendentes");
+        }
+
+// quem vai receber o pagamento
+        User originador = cobranca.getOriginador();
+        BigDecimal valor = cobranca.getValor();
+
+        // Validar saldo do pagador (destinatário)
+        if (pagador.getSaldo().compareTo(valor) < 0) {
+            throw new RuntimeException("Saldo insuficiente para pagar a cobrança");
+        }
+
+        // Debitar do pagador (destinatário)
+        pagador.setSaldo(pagador.getSaldo().subtract(valor));
+        // Creditar no originador (quem criou a cobrança)
+        originador.setSaldo(originador.getSaldo().add(valor));
+
+        // Atualizar status da cobrança para PAGA
+        cobranca.setStatus(Status.PAGA);
+
+        // Salvar alterações
+        userRepository.save(originador);
+        userRepository.save(pagador);
+        cobrancaRepository.save(cobranca);
+
+        return cobrancaResponse(cobranca);
+    }
+
+    @Transactional
+    public CobrancaResponseDto cancelarCobranca(Long cobrancaId,User originador) throws Exception {
+        Cobranca cobranca = cobrancaRepository.findById(cobrancaId)
+                .orElseThrow(() -> new RuntimeException("Cobrança não encontrada"));
+
+        if (cobranca.getStatus() != Status.PENDENTE) {
+            throw new RuntimeException("Só é possível cancelar cobranças pendentes");
+        }
+
+
+
+        // Verifica se o usuário logado é o originador da cobrança
+        if (!Objects.equals(cobranca.getOriginador().getId(),originador.getId())) {
+            throw new RuntimeException("Usuário não autorizado a cancelar esta cobrança");
+        }
+        cobranca.setStatus(Status.CANCELADA);
+        cobrancaRepository.save(cobranca);
+
+        return cobrancaResponse(cobranca);
+    }
+
+    private CobrancaResponseDto cobrancaResponse(Cobranca cobranca) {
         return new CobrancaResponseDto(
-                newCobranca.getId(),
-               new UserResponseDto(
-                        originador.getId(),
-                        originador.getNome(),
-                        originador.getCpf(),
-                       originador.getEmail(),
-                        originador.getSaldo()
-
+                cobranca.getId(),
+                new UserResponseDto(
+                        cobranca.getOriginador().getId(),
+                        cobranca.getOriginador().getNome(),
+                        cobranca.getOriginador().getCpf(),
+                        cobranca.getOriginador().getEmail(),
+                        cobranca.getOriginador().getSaldo()
                 ),
                 new UserResponseDto(
-                        destinatario.getId(),
-                        destinatario.getNome(),
-                        destinatario.getCpf(),
-                        destinatario.getEmail(),
-                        destinatario.getSaldo()
-
+                        cobranca.getDestinatario().getId(),
+                        cobranca.getDestinatario().getNome(),
+                        cobranca.getDestinatario().getCpf(),
+                        cobranca.getDestinatario().getEmail(),
+                        cobranca.getDestinatario().getSaldo()
                 ),
-                newCobranca.getValor(),
-                newCobranca.getDescricao(),
-                newCobranca.getStatus(),
-                newCobranca.getDataCriacao()
+                cobranca.getValor(),
+                cobranca.getDescricao(),
+                cobranca.getStatus(),
+                cobranca.getDataCriacao()
         );
-
-    }
-    // Antes de finalizar a transferência, deve-se consultar um serviço autorizador externo
-//    public  boolean authorizeTransaction(User sender, BigDecimal valeu){
-//ResponseEntity<Map> authorizationResponse= restTemplate.getForEntity("https://run.mocky.io/v3/8fafdd68-a090-496f-8c9a-3442cf30dae6", Map.class);
-//if(authorizationResponse.getStatusCode() == HttpStatus.OK ){
-//    String message=(String) authorizationResponse.getBody().get("message");
-//
-//    return "Autozirado".equalsIgnoreCase(message);
-//
-//}else return  false;
-//
-//    }
-}
+    }}

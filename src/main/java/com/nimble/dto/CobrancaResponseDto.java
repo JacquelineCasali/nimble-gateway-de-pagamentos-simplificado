@@ -1,13 +1,20 @@
 package com.nimble.dto;
+import com.nimble.entity.Status;
+
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+
+
 public record CobrancaResponseDto(
         Long id,
         UserResponseDto originador,
         UserResponseDto destinatario,
         BigDecimal valor,
         String descricao,
-        com.nimble.entity.Status status,
+        Status status,
         LocalDateTime dataCriacao
 ) {
+
+
 }

@@ -24,6 +24,7 @@ public class SecurityConfig {
         return configuration.getAuthenticationManager();
     }
 
+//
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, CustomAuthenticationEntryPoint customEntryPoint) throws Exception {
         return http.csrf(csrf -> csrf.disable())
@@ -33,8 +34,7 @@ public class SecurityConfig {
                     req.requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll();
                     req.anyRequest().authenticated();
                 })
-                .exceptionHandling(ex -> ex.authenticationEntryPoint(customEntryPoint))
-
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(customEntryPoint)) // 👈 aqui!
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
