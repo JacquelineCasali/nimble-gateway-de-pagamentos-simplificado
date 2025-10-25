@@ -13,10 +13,11 @@ Sistema de **gateway de pagamentos** desenvolvido em **Java + Spring Boot**, com
 - **Java 17+**
 - **Spring Boot 3**
 - **Spring Data JPA**
-- [Hibernate Validator]
-- [PostgreSQL]
-- [Lombok]
-
+- **Hibernate Validator**
+- **PostgreSQL**
+- **Lombok**
+- ** JUnit 5 + Mockito **
+- ** Swagger (Springdoc OpenAPI)**
 ---
 
 ## ⚙️ Estrutura do Projeto
@@ -29,9 +30,6 @@ src/main/java/com/nimble
 ├── repository/ # Interfaces de repositório
 ├── service/ # Regras de negócio
 └── NimbleApplication # Classe principal
-
-yaml
-Copiar código
 
 ---
 
@@ -50,31 +48,52 @@ Antes de rodar o projeto, certifique-se de ter instalado:
    ```bash
    git clone https://github.com/JacquelineCasali/nimble-gateway-de-pagamentos-simplificado.git
    cd nimble-gateway-de-pagamentos-simplificado
-Compile e rode o projeto:
+   
+2. ** Configure o banco de dados no arquivo application.yml:
+spring:
+datasource:
+url: jdbc:postgresql://localhost:5432/nimble
+username: postgres
+password: sua_senha
+jpa:
+hibernate:
+ddl-auto: update
+show-sql: true
 
-bash
-Copiar código
+3. Compile e rode o projeto:
+
 mvn spring-boot:run
 Acesse no navegador ou via Postman:
+4. Acesse a API no postman ou no swagger 
 
-arduino
-Copiar código
 http://localhost:8080
-💰 Funcionalidades Principais
-🔹 1. Pagamento de Cobranças
+
+5. Acesse a API no swagger
+http://localhost:8080/swagger-ui/index.html
+
+## 💰 Funcionalidades Principais
+
+
+🔹 1. Gerenciamento de Usuários
+- Cadastro : nome ,cpf , email, senha (segura)
+- Login: Cpf ou email + senha que retorna o token JWT
+
+🔹 2. Gestão de Cobrancças
+- Cria cobranças de um usuário para outro via CPF
+- Consulta cobranças enviadas ou recebidas , filtrando por status
+
+🔹 3.Pagamento de Cobranças
+
 As cobranças podem ser pagas de duas formas:
 
-✅ Pagamento por saldo
+✅ Pagamento por saldo interno 
 O sistema verifica se o usuário pagador tem saldo suficiente.
 Em caso positivo:
-
 Debita o valor do saldo do pagador.
-
 Credita o valor ao destinatário.
-
 Se não houver saldo suficiente, o pagamento é negado.
 
-💳 Pagamento por cartão de crédito
+#💳 Pagamento por cartão de crédito
 Integra com o autorizador externo via GET:
 bash
 Copiar código
@@ -86,50 +105,24 @@ cvv
 
 Apenas se o autorizador retornar “APROVADO” o pagamento é efetivado.
 
-🔹 2. Depósito de Saldo
-Usuário pode fazer um depósito em sua conta.
-O sistema consulta o autorizador externo antes de confirmar o depósito.
-Se autorizado, o saldo é creditado na conta do usuário.
-
-🔹 3. Cancelamento de Cobranças
-🕓 Cobrança pendente:
-Apenas muda o estado para “CANCELADA”.
-
-
-
-💳 Cobrança paga com cartão:
-O sistema consulta o autorizador externo.
-Se autorizado, o cancelamento é concluído.
-
-🔹 4. Integração Externa — Autorizador
-O sistema faz chamadas GET para:
-
-bash
-Copiar código
-https://zsy6tx7aql.execute-api.sa-east-1.amazonaws.com/authorizer
-O autorizador pode responder:
-
-
+🔹 4. Cancelamento de Cobranças
+- 🕓 Cobrança pendente: Apenas muda o estado para “CANCELADA”.
+- Pagas com saldo :estorno automatico 
+- Pagas com cartao consulta autorização antes de cancelar 
 
 ✅ Validações Implementadas
 Valor de cobrança e depósito deve ser positivo.
 Verificação de saldo suficiente antes de pagamentos via saldo.
-Cancelamento somente de cobranças pendentes .
+Validação de CPF
 Pagamentos e depósitos só confirmam após autorização externa.
 
 💡 Dica extra
-
 Se quiser testar se um CPF é válido, use sites confiáveis como:
-
 https://www.4devs.com.br/gerador_de_cpf
-
 https://www.geradordecpf.org
-
 Eles geram CPFs válidos (para testes), com dígitos verificadores corretos.
 
-
-
-
+## Teste Unitários 
 
 👩‍💻 Autoria
 Desenvolvido por Jacqueline Casali

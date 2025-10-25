@@ -4,6 +4,8 @@ package com.nimble.controller;
         import com.nimble.entity.User;
         import com.nimble.infra.security.DadosTokenJWT;
         import com.nimble.infra.security.TokenService;
+        import io.swagger.v3.oas.annotations.Operation;
+        import io.swagger.v3.oas.annotations.tags.Tag;
         import jakarta.validation.Valid;
         import org.springframework.beans.factory.annotation.Autowired;
         import org.springframework.http.ResponseEntity;
@@ -13,6 +15,8 @@ package com.nimble.controller;
 
 @RestController
 @RequestMapping("/login")
+
+@Tag(name = "Login", description = "Realizar login Por cpf ou email")
 public class AuthController {
 
     @Autowired
@@ -21,6 +25,7 @@ public class AuthController {
     private TokenService tokenService;
 
     @PostMapping
+    @Operation(summary = "Autenticação do usuário", description = "Essa função é responsável por autenticar usuário retornando o JWT")
     public ResponseEntity efetuarLogin(@RequestBody @Valid LoginDto dados) {
 
 
