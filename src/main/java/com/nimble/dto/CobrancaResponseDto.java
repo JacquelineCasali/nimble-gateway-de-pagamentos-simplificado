@@ -1,4 +1,5 @@
 package com.nimble.dto;
+import com.nimble.entity.MetodoPagamento;
 import com.nimble.entity.Status;
 
 
@@ -13,7 +14,9 @@ public record CobrancaResponseDto(
         BigDecimal valor,
         String descricao,
         Status status,
-        LocalDateTime dataCriacao
+
+        LocalDateTime dataCriacao,
+        MetodoPagamento metodoPagamento
 ) {
 
 

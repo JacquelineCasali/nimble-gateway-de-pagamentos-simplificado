@@ -1,38 +1,28 @@
-//package com.nimble.service;
-//
-//
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.http.ResponseEntity;
-//import org.springframework.stereotype.Service;
-//import org.springframework.web.client.RestTemplate;
-//
-//import java.util.Map;
-//
-//@Service
-//public class AutorizadorCartaoClient {
-//
-//    @Autowired
-//    private RestTemplate restTemplate;
-//
-//    private static final String URL_CARTAO = "https://zsy6tx7aql.execute-api.sa-east-1.amazonaws.com/authorizer";
-//
-//    public boolean autorizarPagamentoCartao(PagamentoCartaoDto pagamento) {
-//        try {
-//            ResponseEntity<Map> response = restTemplate.postForEntity(URL_CARTAO, pagamento, Map.class);
-//            if (!response.getStatusCode().is2xxSuccessful()) return false;
-//
-//            Map<String, Object> body = response.getBody();
-//            if (body == null) return false;
-//
-//            Object dataObj = body.get("data");
-//            if (!(dataObj instanceof Map)) return false;
-//
-//            Map<String, Object> data = (Map<String, Object>) dataObj;
-//            Object authorizedObj = data.get("authorized");
-//            return authorizedObj instanceof Boolean && (Boolean) authorizedObj;
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            return false;
-//        }
-//    }
-//}
+package com.nimble.util;
+
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.Map;
+
+@Component
+public class AutorizadorCartaoClient {
+
+    private final RestTemplate restTemplate;
+
+    public AutorizadorCartaoClient(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
+
+    public boolean isCartaoAutorizado(Map<String, Object> dadosCartao) {
+        try {
+            // URL do autorizador de cartão (exemplo)
+            String url = "https://zsy6tx7aql.execute-api.sa-east-1.amazonaws.com/authorizer/cartao";
+
+            Map response = restTemplate.postForObject(url, dadosCartao, Map.class);
+            return response != null && Boolean.TRUE.equals(response.get("autorizado"));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+}

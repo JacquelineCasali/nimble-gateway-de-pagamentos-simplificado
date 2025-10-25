@@ -37,6 +37,10 @@ private User destinatario;
     @Enumerated(EnumType.STRING)
     private Status status = Status.PENDENTE;
 
+    @Enumerated(EnumType.STRING)
+    private MetodoPagamento metodoPagamento;
+
+
     @CreationTimestamp
     private LocalDateTime dataCriacao;
 }

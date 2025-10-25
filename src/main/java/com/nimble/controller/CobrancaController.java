@@ -2,10 +2,12 @@ package com.nimble.controller;
 
 import com.nimble.dto.CobrancaDto;
 import com.nimble.dto.CobrancaResponseDto;
+import com.nimble.dto.PagamentoCartaoDto;
 import com.nimble.entity.Status;
 import com.nimble.service.CobrancaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -44,12 +46,20 @@ public class CobrancaController {
         User destinatario = (User) authentication.getPrincipal();
         return cobrancaService.listarCobrancasRecebidas(destinatario.getCpf(),status);
     }
-    @PutMapping("/pagar/{id}")
-    public ResponseEntity<CobrancaResponseDto> pagarCobranca(@PathVariable Long id) throws Exception {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User originador = (User) authentication.getPrincipal();
-        var cobrancaPaga = cobrancaService.pagarCobranca(id, originador);
-        return ResponseEntity.ok(cobrancaPaga);
+//@PutMapping("/pagar/{id}")
+//public ResponseEntity<CobrancaResponseDto> pagarCobranca(@PathVariable Long id) throws Exception {
+//    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//    User originador = (User) authentication.getPrincipal();
+//    var cobrancaPaga = cobrancaService.pagarCobranca(id, originador);
+//    return ResponseEntity.ok(cobrancaPaga);
+//}
+
+    @PostMapping("/pagar/{id}")
+    public ResponseEntity<CobrancaResponseDto> pagar(
+            @RequestBody PagamentoCartaoDto dto,
+            @AuthenticationPrincipal User user
+    ) throws Exception {
+        return ResponseEntity.ok(cobrancaService.pagarCobranca(dto, user));
     }
 
     @PutMapping("/cancelar/{id}")

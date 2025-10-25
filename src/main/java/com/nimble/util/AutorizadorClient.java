@@ -4,6 +4,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 @Component
@@ -32,6 +33,10 @@ public class AutorizadorClient {
             e.printStackTrace();
             return false;
         }
+    }
+
+    public boolean validarPagamentoCartao(String s, String s1, String cvv, BigDecimal valor) {
+        return false;
     }
 }
 

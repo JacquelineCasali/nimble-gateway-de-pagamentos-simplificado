@@ -3,6 +3,7 @@ package com.nimble.service;
 
 import com.nimble.dto.*;
 import com.nimble.entity.Cobranca;
+import com.nimble.entity.MetodoPagamento;
 import com.nimble.entity.Status;
 import com.nimble.entity.User;
 import com.nimble.infra.exceptions.RegraNegocioException;
@@ -80,11 +81,10 @@ public class CobrancaService {
     }
 
     @Transactional
-    public CobrancaResponseDto pagarCobranca(Long cobrancaId,User pagador) throws Exception {
-        Cobranca cobranca = cobrancaRepository.findById(cobrancaId)
+    public CobrancaResponseDto pagarCobranca(PagamentoCartaoDto dto, User pagador) throws Exception {
+        Cobranca cobranca = cobrancaRepository.findById(dto.cobrancaId())
                 .orElseThrow(() -> new RuntimeException("Cobrança não encontrada"));
 
-        // Verifica se quem está pagando é o destinatário da cobrança
         if (!Objects.equals(cobranca.getDestinatario().getId(), pagador.getId())) {
             throw new RuntimeException("Usuário não autorizado a pagar esta cobrança");
         }
@@ -93,44 +93,52 @@ public class CobrancaService {
             throw new RuntimeException("Só é possível pagar cobranças pendentes");
         }
 
-
-//        User originador = cobranca.getOriginador();
         BigDecimal valor = cobranca.getValor();
+        boolean isCartao = dto.numeroCartao() != null && !dto.numeroCartao().isBlank();
 
-        // verifica  saldo
-        if (pagador.getSaldo().compareTo(valor) < 0) {
-            throw new RuntimeException("Saldo insuficiente para pagar a cobrança");
+        if (isCartao) {
+            System.out.println("Pagamento via CARTÃO detectado.");
+
+            boolean autorizado = autorizadorClient.isAutorizado();
+            if (!autorizado) {
+                throw new RuntimeException("Pagamento via cartão não autorizado pelo autorizador externo");
+            }
+
+            // 💡 Define o método de pagamento corretamente
+            cobranca.setMetodoPagamento(MetodoPagamento.CARTAO);
+
+            User originador = cobranca.getOriginador();
+            originador.setSaldo(originador.getSaldo().add(valor));
+            userRepository.save(originador);
+
+        } else {
+            System.out.println("Pagamento via SALDO detectado.");
+
+            if (pagador.getSaldo().compareTo(valor) < 0) {
+                throw new RuntimeException("Saldo insuficiente para pagar a cobrança");
+            }
+
+            boolean autorizado = autorizadorClient.isAutorizado();
+            if (!autorizado) {
+                throw new RuntimeException("Pagamento não autorizado pelo autorizador externo");
+            }
+
+            // 💡 Define o método de pagamento corretamente
+            cobranca.setMetodoPagamento(MetodoPagamento.SALDO);
+
+            pagador.setSaldo(pagador.getSaldo().subtract(valor));
+            User originador = cobranca.getOriginador();
+            originador.setSaldo(originador.getSaldo().add(valor));
+
+            userRepository.save(pagador);
+            userRepository.save(originador);
         }
 
-        //chama a api externa de autorização para validar a operação
-
-        boolean autorizado = autorizadorClient.isAutorizado();
-//verifica se o pagamento foi autorizado ou nao
-        if (!autorizado) {
-            throw new RuntimeException("Pagamento não autorizado pelo autorizador externo");
-        }
-
-
-        // Debita saldo do pagador
-        pagador.setSaldo(pagador.getSaldo().subtract(valor));
-        // Credita saldo no originador (quem criou a cobrança)
-        User originador = cobranca.getOriginador();
-        originador.setSaldo(originador.getSaldo().add(valor));
-
-
-        // Atualizar status da cobrança para PAGA
         cobranca.setStatus(Status.PAGA);
-
-        // Salvar alterações
-        userRepository.save(pagador);
-        userRepository.save(originador);
-
-
         cobrancaRepository.save(cobranca);
 
         return cobrancaResponse(cobranca);
     }
-
 
 
 
@@ -154,6 +162,8 @@ public class CobrancaService {
         return cobrancaResponse(cobranca);
     }
 
+
+
     private CobrancaResponseDto cobrancaResponse(Cobranca cobranca) {
         return new CobrancaResponseDto(
                 cobranca.getId(),
@@ -174,7 +184,8 @@ public class CobrancaService {
                 cobranca.getValor(),
                 cobranca.getDescricao(),
                 cobranca.getStatus(),
-                cobranca.getDataCriacao()
+                cobranca.getDataCriacao(),
+                cobranca.getMetodoPagamento()
         );
     }
 
