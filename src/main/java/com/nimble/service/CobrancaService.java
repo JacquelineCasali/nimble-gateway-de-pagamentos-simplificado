@@ -79,7 +79,7 @@ public class CobrancaService {
         List<Cobranca> cobrancas = cobrancaRepository.findByDestinatarioAndStatus(destinatario, status);
         return cobrancas.stream().map(this::cobrancaResponse).toList();
     }
-
+// pacar cartao ou saldo
     @Transactional
     public CobrancaResponseDto pagarCobranca(PagamentoCartaoDto dto, User pagador) throws Exception {
         Cobranca cobranca = cobrancaRepository.findById(dto.cobrancaId())
@@ -104,7 +104,7 @@ public class CobrancaService {
                 throw new RuntimeException("Pagamento via cartão não autorizado pelo autorizador externo");
             }
 
-            // 💡 Define o método de pagamento corretamente
+            // método de pagamento
             cobranca.setMetodoPagamento(MetodoPagamento.CARTAO);
 
             User originador = cobranca.getOriginador();
@@ -123,7 +123,7 @@ public class CobrancaService {
                 throw new RuntimeException("Pagamento não autorizado pelo autorizador externo");
             }
 
-            // 💡 Define o método de pagamento corretamente
+            // método de pagamento
             cobranca.setMetodoPagamento(MetodoPagamento.SALDO);
 
             pagador.setSaldo(pagador.getSaldo().subtract(valor));
@@ -140,32 +140,90 @@ public class CobrancaService {
         return cobrancaResponse(cobranca);
     }
 
-
-
-
     @Transactional
     public CobrancaResponseDto cancelarCobranca(Long cobrancaId,User originador) throws Exception {
         Cobranca cobranca = cobrancaRepository.findById(cobrancaId)
                 .orElseThrow(() -> new RuntimeException("Cobrança não encontrada"));
 
-        if (cobranca.getStatus() != Status.PENDENTE) {
-            throw new RuntimeException("Só é possível cancelar cobranças pendentes");
-        }
-
         // Verifica se o usuário logado é o originador da cobrança
         if (!Objects.equals(cobranca.getOriginador().getId(),originador.getId())) {
             throw new RuntimeException("Usuário não autorizado a cancelar esta cobrança");
         }
-        cobranca.setStatus(Status.CANCELADA);
-        cobrancaRepository.save(cobranca);
 
-        return cobrancaResponse(cobranca);
+//cancelar pendante
+                if (cobranca.getStatus() == Status.PENDENTE) {
+                    cobranca.setStatus(Status.CANCELADA);
+                    cobrancaRepository.save(cobranca);
+                    return cobrancaResponse(cobranca);
+           }
+//cancelar cobrança paga
+        if(cobranca.getStatus()==Status.PAGA){
+            // Verifica o método de pagamento armazenado na cobrança
+            Enum metodoPagamento = cobranca.getMetodoPagamento();
+//            User originador = cobranca.getOriginador();
+            User pagador = cobranca.getDestinatario();
+            BigDecimal valor = cobranca.getValor();
+// valor cancelado deve ser estornado, retornando ao saldo do pagador
+            if (cobranca.getMetodoPagamento() == MetodoPagamento.SALDO) {
+                // 🟩 Estorno local: devolve o valor para o pagador
+                originador.setSaldo(originador.getSaldo().subtract(valor));
+                pagador.setSaldo(pagador.getSaldo().add(valor));
+
+//                userRepository.save(originador);
+                userRepository.save(pagador);
+                cobranca.setStatus(Status.CANCELADA);
+
+            } else if (cobranca.getMetodoPagamento() == MetodoPagamento.CARTAO){
+                // Chama autorizador externo para validar cancelamento
+                boolean autorizado = autorizadorClient.isAutorizado();
+
+                if (!autorizado) {
+                    throw new RuntimeException("Cancelamento não autorizado pelo autorizador externo");
+                }
+// Se autorizado, apenas marca como cancelada
+                cobranca.setStatus(Status.CANCELADA);
+
+            }else {
+                throw new RuntimeException("Método de pagamento desconhecido");
+            }
+            cobrancaRepository.save(cobranca);
+
+            return cobrancaResponse(cobranca);
+        }
+
+        throw new RuntimeException("Cobrança não pode ser cancelada");
+
+
     }
 
 
 
+
+//    @Transactional
+//    public CobrancaResponseDto cancelarCobranca(Long cobrancaId,User originador) throws Exception {
+//        Cobranca cobranca = cobrancaRepository.findById(cobrancaId)
+//                .orElseThrow(() -> new RuntimeException("Cobrança não encontrada"));
+//
+//        if (cobranca.getStatus() != Status.PENDENTE) {
+//            throw new RuntimeException("Só é possível cancelar cobranças pendentes");
+//        }
+//
+//        // Verifica se o usuário logado é o originador da cobrança
+//        if (!Objects.equals(cobranca.getOriginador().getId(),originador.getId())) {
+//            throw new RuntimeException("Usuário não autorizado a cancelar esta cobrança");
+//        }
+//        cobranca.setStatus(Status.CANCELADA);
+//        cobrancaRepository.save(cobranca);
+//
+//        return cobrancaResponse(cobranca);
+//    }
+//
+
+
     private CobrancaResponseDto cobrancaResponse(Cobranca cobranca) {
-        return new CobrancaResponseDto(
+
+
+    return new CobrancaResponseDto(
                 cobranca.getId(),
                 new UserResponseDto(
                         cobranca.getOriginador().getId(),
@@ -185,7 +243,7 @@ public class CobrancaService {
                 cobranca.getDescricao(),
                 cobranca.getStatus(),
                 cobranca.getDataCriacao(),
-                cobranca.getMetodoPagamento()
+            cobranca.getMetodoPagamento()
         );
     }
 

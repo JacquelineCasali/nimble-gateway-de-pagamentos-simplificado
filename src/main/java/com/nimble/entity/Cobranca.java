@@ -38,7 +38,7 @@ private User destinatario;
     private Status status = Status.PENDENTE;
 
     @Enumerated(EnumType.STRING)
-    private MetodoPagamento metodoPagamento;
+    private MetodoPagamento metodoPagamento = MetodoPagamento.AGUARDANDO_PAGAMENTO;
 
 
     @CreationTimestamp

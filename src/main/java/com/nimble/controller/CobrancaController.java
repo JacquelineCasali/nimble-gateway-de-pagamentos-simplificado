@@ -46,15 +46,8 @@ public class CobrancaController {
         User destinatario = (User) authentication.getPrincipal();
         return cobrancaService.listarCobrancasRecebidas(destinatario.getCpf(),status);
     }
-//@PutMapping("/pagar/{id}")
-//public ResponseEntity<CobrancaResponseDto> pagarCobranca(@PathVariable Long id) throws Exception {
-//    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//    User originador = (User) authentication.getPrincipal();
-//    var cobrancaPaga = cobrancaService.pagarCobranca(id, originador);
-//    return ResponseEntity.ok(cobrancaPaga);
-//}
 
-    @PostMapping("/pagar/{id}")
+    @PostMapping("/pagar")
     public ResponseEntity<CobrancaResponseDto> pagar(
             @RequestBody PagamentoCartaoDto dto,
             @AuthenticationPrincipal User user
@@ -70,13 +63,6 @@ public class CobrancaController {
         return ResponseEntity.ok(cobrancaCancelada);
     }
 
-//pagar com o cartao
-//    @PutMapping("/pagarCartao/{id}")
-//    public ResponseEntity<CobrancaResponseDto> pagarPorCartao(@PathVariable Long id, @RequestBody PagamentoCartaoDto pagamentoDto) throws Exception {
-//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//        User pagador = (User) authentication.getPrincipal();
-//        var cobrancaPaga = cobrancaService.pagarPorCartao(id, pagador, pagamentoDto);
-//        return ResponseEntity.ok(cobrancaPaga);
-//    }
+
 
 }

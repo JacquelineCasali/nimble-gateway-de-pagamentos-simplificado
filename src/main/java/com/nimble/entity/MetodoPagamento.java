@@ -2,11 +2,11 @@ package com.nimble.entity;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 public enum MetodoPagamento {
-    SALDO, CARTAO;
+    SALDO, CARTAO,AGUARDANDO_PAGAMENTO;
 
     @JsonCreator
-    public static Status from(String value) {
-        return Status.valueOf(value.toUpperCase());
+    public static MetodoPagamento from(String value) {
+        return MetodoPagamento.valueOf(value.toUpperCase());
     }
 
     @JsonValue
